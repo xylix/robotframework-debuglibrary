@@ -1,5 +1,8 @@
-Debug Library for Robot Framework
+REPL for Robot Framework
 =================================
+
+This is a fork of https://github.com/xyb/robotframework-debuglibrary, intended to achieve a faster to hack
+code base through lack of legacy support and making use of newest python features.
 
 .. contents::
    :local:
@@ -7,63 +10,55 @@ Debug Library for Robot Framework
 Introduction
 ------------
 
-Robotframework-DebugLibrary is a debug library for `RobotFramework`_,
-which can be used as an interactive shell(REPL) also.
+A Read-Eval-Print-Loop (REPL) for Robot Framework.
 
 .. _`RobotFramework`: http://robotframework.org/
 
 .. image:: https://api.codeclimate.com/v1/badges/5201026ff11b63530cf5/maintainability
-   :target: https://codeclimate.com/github/xyb/robotframework-debuglibrary/maintainability
+   :target: https://codeclimate.com/github/xylix/robotframework-repl/maintainability
    :alt: Maintainability
 
 .. image:: https://api.codeclimate.com/v1/badges/5201026ff11b63530cf5/test_coverage
-   :target: https://codeclimate.com/github/xyb/robotframework-debuglibrary/test_coverage
+   :target: https://codeclimate.com/github/xylix/robotframework-repl/test_coverage
    :alt: Test Coverage
 
-.. image:: https://github.com/xyb/robotframework-debuglibrary/workflows/test/badge.svg?branch=master
-   :target: https://github.com/xyb/robotframework-debuglibrary
+.. image:: https://github.com/xylix/robotframework-repl/workflows/test/badge.svg?branch=master
+   :target: https://github.com/xylix/robotframework-repl
    :alt: test
 
-.. image:: https://img.shields.io/pypi/v/robotframework-debuglibrary.svg
-   :target: https://pypi.org/project/robotframework-debuglibrary/
+.. image:: https://img.shields.io/pypi/v/robotframework-repl.svg
+   :target: https://pypi.org/project/robotframework-repl/
    :alt: Latest version
 
 .. image:: https://img.shields.io/badge/robotframework-3.0%20%7C%203.1%20%7C%203.2-blue
-   :target: https://github.com/xyb/robotframework-debuglibrary
+   :target: https://github.com/xylix/robotframework-repl
    :alt: Support robotframework versions
 
-.. image:: https://img.shields.io/pypi/pyversions/robotframework-debuglibrary
-   :target: https://github.com/xyb/robotframework-debuglibrary
+.. image:: https://img.shields.io/pypi/pyversions/robotframework-repl
+   :target: https://github.com/xylix/robotframework-repl
    :alt: Support python versions
 
-.. image:: https://img.shields.io/pypi/dm/robotframework-debuglibrary
-   :target: https://pypi.org/project/robotframework-debuglibrary/
+.. image:: https://img.shields.io/pypi/dm/robotframework-repl
+   :target: https://pypi.org/project/robotframework-repl/
    :alt: PyPI Downloads
 
-.. image:: https://img.shields.io/pypi/l/robotframework-debuglibrary.svg
-   :target: https://github.com/xyb/robotframework-debuglibrary/blob/master/LICENSE
+.. image:: https://img.shields.io/pypi/l/robotframework-repl.svg
+   :target: https://github.com/xylix/robotframework-repl/blob/master/LICENSE
    :alt: License
 
 
-Installation
+🚫 NOT SUPPORTED YET Installation
 ------------
-
 To install using ``pip``::
 
-    pip install robotframework-debuglibrary
+    pip install robotframework-repl
 
-NOTICE: 2.0 is not compatible with python 2
-*******************************************
 
-``DebugLibrary`` >= 2.0.0 supports Python versions 3.x only.
-If you still using python 2.7, please use ``DebugLibrary`` < 2.0.0 ::
-
-    pip install 'robotframework-debuglibrary<2'
 
 Usage
 -----
 
-You can use this as a library, import ``DebugLibrary`` and call ``Debug``
+You can use this as a library, import ``Repl`` and call ``Debug``
 or ``Debug If`` keywords in your test files like this::
 
     *** Settings ***
@@ -79,7 +74,7 @@ or ``Debug If`` keywords in your test files like this::
 
 Or you can run it standalone as a ``RobotFramework`` shell::
 
-    $ rfdebug
+    $ rfrepl 
     [...snap...]
     >>>>> Enter interactive shell
     > help
@@ -135,15 +130,15 @@ Or you can run it standalone as a ``RobotFramework`` shell::
 
 The interactive shell support auto-completion for robotframework keywords and
 commands. Try input ``BuiltIn.`` then type ``<TAB>`` key to feeling it.
-The history will save at ``~/.rfdebug_history`` default or any file
+The history will save at ``~/.rfrepl_history`` default or any file
 defined in environment variable ``RFDEBUG_HISTORY``.
 
-In case you don't remember the name of keyword during using ``rfdebug``,
+In case you don't remember the name of keyword during using ``rfrepl``,
 there are commands ``libs`` or ``ls`` to list the imported libraries and
 built-in libraries, and ``keywords <lib name>`` or ``k`` to list
 keywords of a library.
 
-``rfdebug`` accept any ``pybot`` arguments, but by default, ``rfdebug``
+``rfrepl`` accept any ``pybot`` arguments, but by default, ``rfrepl``
 disabled all logs with ``-l None -x None -o None -L None -r None``.
 
 Step debugging
@@ -186,7 +181,7 @@ Submitting issues
 -----------------
 
 Bugs and enhancements are tracked in the `issue tracker
-<https://github.com/xyb/robotframework-debuglibrary/issues>`_.
+<https://github.com/xylix/robotframework-repl/issues>`_.
 
 Before submitting a new issue, it is always a good idea to check is the
 same bug or enhancement already reported. If it is, please add your comments

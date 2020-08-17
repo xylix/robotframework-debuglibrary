@@ -3,7 +3,6 @@ import re
 from robot.libraries.BuiltIn import BuiltIn
 
 from .robotlib import ImportedLibraryDocBuilder, get_libs
-from .robotvar import assign_variable
 
 try:
     from robot.variables.search import is_variable
@@ -14,6 +13,11 @@ KEYWORD_SEP = re.compile('  +|\t')
 
 _lib_keywords_cache = {}
 
+def assign_variable(robot_instance, variable_name, args):
+    """Assign a robotframework variable."""
+    variable_value = robot_instance.run_keyword(*args)
+    robot_instance._variables.__setitem__(variable_name, variable_value)
+    return variable_value
 
 def parse_keyword(command):
     """Split a robotframework keyword string."""

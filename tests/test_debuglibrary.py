@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import unittest
+import pytest
 
 import pexpect
 from robot.version import get_version
@@ -35,13 +35,39 @@ def check_command(command, pattern):
     child.sendline(command)
     check_result(pattern)
 
-
-def base_functional_testing():
+@pytest.fixture
+def child():
     global child
-    child = pexpect.spawn('coverage',
-                          ['run', '--append', 'DebugLibrary/shell.py'])
+    child = pexpect.spawn('coverage', ['run', '--append', 'DebugLibrary/shell.py'])
     child.expect('Enter interactive shell', timeout=TIMEOUT_SECONDS * 3)
+    yield child
 
+    check_command('exit', 'Exit shell.')
+    child.wait()
+
+@pytest.fixture
+def robot_child():
+    global child
+    # Command "coverage run robot tests/step.robot" does not work,
+    # so start the program using DebugLibrary's shell instead of "robot".
+    child = pexpect.spawn('coverage',
+                          ['run', '--append', 'DebugLibrary/shell.py',
+                           'tests/step.robot'])
+    child.expect('Type "help" for more information.*>',
+                 timeout=TIMEOUT_SECONDS * 3)
+    yield child
+    # Exit the debug mode started by Debug keyword.
+    check_command('c',  # continue
+                  'Exit shell.*'
+                  'another test case.*'
+                  'end')
+    # Exit the interactive shell started by "DebugLibrary/shell.py".
+    check_command('c', 'Report: ')
+    child.wait()
+
+
+
+def test_autocomplete(child):
     # auto complete
     check_prompt('key\t', 'keywords')
     check_prompt('key\t', 'Keyword Should Exist')
@@ -52,16 +78,10 @@ def base_functional_testing():
     #check_prompt('DebugLibrary.\t', 'Debug If')
     check_prompt('get\t', 'Get Count')
     check_prompt('get\t', 'Get Time')
-    check_prompt('selenium  http://google.com  \t', 'firefox.*chrome')
-    check_prompt('selenium  http://google.com  fire\t', 'firefox')
+    # check_prompt('selenium  http://google.com  \t', 'firefox.*chrome')
+    # check_prompt('selenium  http://google.com  fire\t', 'firefox')
 
-    # keyword
-    check_command('log to console  hello', 'hello')
-    check_command('get time', '.*-.*-.* .*:.*:.*')
-    # auto suggest
-    check_prompt('g', 'et time')
-
-    # help
+def test_help(child):
     check_command('libs',
                   'Imported libraries:.*DebugLibrary.*Builtin libraries:')
     check_command('help libs', 'Print imported and builtin libraries,')
@@ -72,6 +92,7 @@ def base_functional_testing():
     check_command('k nothing', 'not found library')
     check_command('d Debug', 'Open a interactive shell,')
 
+def test_variables(child):
     # var
     check_command('@{{list}} =  Create List    hello    world',
                   "@{{list}} = ['hello', 'world']")
@@ -80,35 +101,28 @@ def base_functional_testing():
                   "&{dict} = {'name': 'admin'}")
     check_command('${dict.name}', 'admin')
 
+def test_auto_suggest(child):
+    check_prompt('g', 'et time')
+
+def test_errors(child):
     # fail-safe
     check_command('fail', 'AssertionError')
     check_command('nothing', "No keyword with name 'nothing' found.")
-    check_command('get',
-                  "execution failed:.*No keyword with name 'get' found.")
+    check_command('get', "execution failed:.*No keyword with name 'get' found.")
 
+def test_debug_if(child):
     # debug if
     check_command('${secs} =  Get Time  epoch', 'secs.* = ')
     check_command('Debug If  ${secs} > 1', 'Enter interactive shell')
     check_command('exit', 'Exit shell.')
     check_command('Debug If  ${secs} < 1', '> ')
 
-    # exit
-    check_command('exit', 'Exit shell.')
-    child.wait()
-
-    return 'OK'
+def test_some_rf_core_keywords(child):
+    check_command('log to console  hello', 'hello')
+    check_command('get time', '.*-.*-.* .*:.*:.*')
 
 
-def step_functional_testing():
-    global child
-    # Command "coverage run robot tests/step.robot" does not work,
-    # so start the program using DebugLibrary's shell instead of "robot".
-    child = pexpect.spawn('coverage',
-                          ['run', '--append', 'DebugLibrary/shell.py',
-                           'tests/step.robot'])
-    child.expect('Type "help" for more information.*>',
-                 timeout=TIMEOUT_SECONDS * 3)
-
+def test_step_functionality(robot_child):
     check_command('list', 'Please run `step` or `next` command first.')
 
     support_source_lineno = get_version() >= '3.2'
@@ -150,33 +164,3 @@ def step_functional_testing():
         check_command('',  # repeat last command
                       '=> BuiltIn.Log To Console  another test case')
 
-    # Exit the debug mode started by Debug keyword.
-    check_command('c',  # continue
-                  'Exit shell.*'
-                  'another test case.*'
-                  'end')
-    # Exit the interactive shell started by "DebugLibrary/shell.py".
-    check_command('c', 'Report: ')
-    child.wait()
-
-    return 'OK'
-
-
-class FunctionalTestCase(unittest.TestCase):
-    def test_base_functional(self):
-        assert base_functional_testing() == 'OK'
-
-    def test_step_functional(self):
-        assert step_functional_testing() == 'OK'
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(FunctionalTestCase('test_base_functional'))
-    suite.addTest(FunctionalTestCase('test_step_functional'))
-    return suite
-
-
-if __name__ == '__main__':
-    print(base_functional_testing())
-    print(step_functional_testing())

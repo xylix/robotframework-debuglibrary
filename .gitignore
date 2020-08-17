@@ -18,3 +18,4 @@ TODO
 htmlcov
 coverage.xml
 coverage.json
+venv/

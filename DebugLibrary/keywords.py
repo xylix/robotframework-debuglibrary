@@ -6,7 +6,6 @@ from .debugcmd import DebugCmd
 from .robotkeyword import run_debug_if
 from .steplistener import RobotLibraryStepListenerMixin, is_step_mode
 from .styles import print_output
-from .webdriver import get_remote_url, get_session_id, get_webdriver_remote
 
 
 class DebugKeywords(RobotLibraryStepListenerMixin):
@@ -43,15 +42,3 @@ class DebugKeywords(RobotLibraryStepListenerMixin):
     def debug_if(self, condition, *args):
         """Runs the Debug keyword if condition is true."""
         return run_debug_if(condition, *args)
-
-    def get_remote_url(self):
-        """Get selenium URL for connecting to remote WebDriver."""
-        return get_remote_url()
-
-    def get_session_id(self):
-        """Get selenium browser session id."""
-        return get_session_id()
-
-    def get_webdriver_remote(self):
-        """Print the way connecting to remote selenium server."""
-        return get_webdriver_remote()

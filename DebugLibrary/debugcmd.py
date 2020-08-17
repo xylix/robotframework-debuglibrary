@@ -1,16 +1,16 @@
 import os
 
 from robot.api import logger
+from robot.libraries.BuiltIn import BuiltIn
 from robot.errors import ExecutionFailed, HandlerExecutionFailed
+from robot.running.signalhandler import STOP_SIGNAL_MONITOR
 
 from .cmdcompleter import CmdCompleter
 from .globals import context
 from .prompttoolkitcmd import PromptToolkitCmd
-from .robotapp import get_robot_instance, reset_robotframework_exception
 from .robotkeyword import (get_keywords, get_lib_keywords, find_keyword,
                            run_keyword)
 from .robotlib import get_builtin_libs, get_libs, get_libs_dict, match_libs
-from .robotselenium import SELENIUM_WEBDRIVERS, start_selenium_commands
 from .sourcelines import (RobotNeedUpgrade, print_source_lines,
                           print_test_case_lines)
 from .steplistener import is_step_mode, set_step_mode
@@ -18,6 +18,13 @@ from .styles import (DEBUG_PROMPT_STYLE, get_debug_prompt_tokens, print_error,
                      print_output)
 
 HISTORY_PATH = os.environ.get('RFDEBUG_HISTORY', '~/.rfdebug_history')
+
+def reset_robotframework_exception():
+    """Resume RF after press ctrl+c during keyword running."""
+    if STOP_SIGNAL_MONITOR._signal_count:
+        STOP_SIGNAL_MONITOR._signal_count = 0
+        STOP_SIGNAL_MONITOR._running_keyword = True
+        logger.info('Reset last exception of DebugLibrary')
 
 
 def run_robot_command(robot_instance, command):
@@ -51,7 +58,7 @@ class DebugCmd(PromptToolkitCmd):
     def __init__(self, completekey='tab', stdin=None, stdout=None):
         PromptToolkitCmd.__init__(self, completekey, stdin, stdout,
                                   history_path=HISTORY_PATH)
-        self.robot = get_robot_instance()
+        self.robot = BuiltIn()
 
     def get_prompt_tokens(self, prompt_text):
         return get_debug_prompt_tokens(prompt_text)
