@@ -3,12 +3,13 @@ import sys
 from robot.libraries.BuiltIn import run_keyword_variant
 
 from .debugcmd import DebugCmd
+from .globals import context
 from .robotkeyword import run_debug_if
-from .steplistener import RobotLibraryStepListenerMixin, is_step_mode
+from .steplistener import RobotLibraryStepListener
 from .styles import print_output
 
 
-class DebugKeywords(RobotLibraryStepListenerMixin):
+class DebugKeywords(RobotLibraryStepListener):
     """Debug Keywords for RobotFramework."""
 
     def debug(self):
@@ -21,7 +22,7 @@ class DebugKeywords(RobotLibraryStepListenerMixin):
         old_stdout = sys.stdout
         sys.stdout = sys.__stdout__
 
-        show_intro = not is_step_mode()
+        show_intro = not context.in_step_mode
         if show_intro:
             print_output('\n>>>>>', 'Enter interactive shell')
 
@@ -31,7 +32,7 @@ class DebugKeywords(RobotLibraryStepListenerMixin):
         else:
             self.debug_cmd.cmdloop(intro='')
 
-        show_intro = not is_step_mode()
+        show_intro = not context.in_step_mode
         if show_intro:
             print_output('\n>>>>>', 'Exit shell.')
 

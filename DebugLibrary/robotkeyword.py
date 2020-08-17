@@ -1,8 +1,10 @@
 import re
 
 from robot.libraries.BuiltIn import BuiltIn
+from robot.libdocpkg.robotbuilder import KeywordDocBuilder, LibraryDocBuilder
+from robot.libdocpkg.model import LibraryDoc
 
-from .robotlib import ImportedLibraryDocBuilder, get_libs
+from .robotlib import get_libs
 
 try:
     from robot.variables.search import is_variable
@@ -24,6 +26,17 @@ def parse_keyword(command):
     # TODO use robotframework functions
     return KEYWORD_SEP.split(command)
 
+class ImportedLibraryDocBuilder(LibraryDocBuilder):
+
+    def build(self, lib):
+        libdoc = LibraryDoc(
+            name=lib.name,
+            doc=self._get_doc(lib),
+            doc_format=lib.doc_format,
+        )
+        libdoc.inits = self._get_initializers(lib)
+        libdoc.keywords = KeywordDocBuilder().build_keywords(lib)
+        return libdoc
 
 def get_lib_keywords(library):
     """Get keywords of imported library."""

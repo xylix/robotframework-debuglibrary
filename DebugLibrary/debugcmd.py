@@ -1,6 +1,7 @@
 import os
 
 from robot.api import logger
+from robot.libraries import STDLIBS
 from robot.libraries.BuiltIn import BuiltIn
 from robot.errors import ExecutionFailed, HandlerExecutionFailed
 from robot.running.signalhandler import STOP_SIGNAL_MONITOR
@@ -10,10 +11,9 @@ from .globals import context
 from .prompttoolkitcmd import PromptToolkitCmd
 from .robotkeyword import (get_keywords, get_lib_keywords, find_keyword,
                            run_keyword)
-from .robotlib import get_builtin_libs, get_libs, get_libs_dict, match_libs
+from .robotlib import get_libs, get_libs_dict, match_libs
 from .sourcelines import (RobotNeedUpgrade, print_source_lines,
                           print_test_case_lines)
-from .steplistener import is_step_mode, set_step_mode
 from .styles import (DEBUG_PROMPT_STYLE, get_debug_prompt_tokens, print_error,
                      print_output)
 
@@ -163,7 +163,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
         for lib in get_libs():
             self._print_lib_info(lib, with_source_path='-s' in args)
         print_output('<', 'Builtin libraries:')
-        for name in sorted(get_builtin_libs()):
+        for name in sorted(list(STDLIBS)):
             print_output('   ' + name, '')
 
     do_ls = do_libs
@@ -226,7 +226,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def emptyline(self):
         """Repeat last nonempty command if in step mode."""
-        self.repeat_last_nonempty_command = is_step_mode()
+        self.repeat_last_nonempty_command = context.in_step_mode
         return super(DebugCmd, self).emptyline()
 
     def append_command(self, command):
@@ -239,7 +239,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def do_step(self, args):
         """Execute the current line, stop at the first possible occasion."""
-        set_step_mode(on=True)
+        context.in_step_mode = True
         self.append_exit()  # pass control back to robot runner
 
     do_s = do_step
@@ -272,7 +272,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def list_source(self, longlist=False):
         """List source code."""
-        if not is_step_mode():
+        if not context.in_step_mode:
             print('Please run `step` or `next` command first.')
             return
 
@@ -290,7 +290,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def do_exit(self, args):
         """Exit debug shell."""
-        set_step_mode(on=False)  # explicitly exit REPL will disable step mode
+        context.in_step_mode = False  # explicitly exit REPL will disable step mode
         self.append_exit()
         return super(DebugCmd, self).do_exit(args)
 

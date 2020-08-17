@@ -3,18 +3,18 @@ import inspect
 from .globals import context
 
 
-class RobotLibraryStepListenerMixin:
+class RobotLibraryStepListener:
     ROBOT_LISTENER_API_VERSION = 2
 
     def __init__(self):
-        super(RobotLibraryStepListenerMixin, self).__init__()
+        super(RobotLibraryStepListener, self).__init__()
         self.ROBOT_LIBRARY_LISTENER = [self]
 
     def _start_keyword(self, name, attrs):
         context.current_source_path = ''
         context.current_source_lineno = 0
 
-        if not is_step_mode():
+        if not context.in_step_mode:
             return
 
         find_runner_step()
@@ -50,11 +50,3 @@ def find_runner_step():
             arginfo = inspect.getargvalues(frame.frame)
             context.current_runner = arginfo.locals.get('runner')
             context.current_runner_step = arginfo.locals.get('step')
-
-
-def set_step_mode(on=True):
-    context.in_step_mode = on
-
-
-def is_step_mode():
-    return context.in_step_mode
