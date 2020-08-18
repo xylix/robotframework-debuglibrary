@@ -68,7 +68,6 @@ def robot_child():
 
 
 def test_autocomplete(child):
-    # auto complete
     check_prompt('key\t', 'keywords')
     check_prompt('key\t', 'Keyword Should Exist')
     check_prompt('k \t', 'keywords.*Keyword Should Exist')
@@ -93,7 +92,6 @@ def test_help(child):
     check_command('d Debug', 'Open a interactive shell,')
 
 def test_variables(child):
-    # var
     check_command('@{{list}} =  Create List    hello    world',
                   "@{{list}} = ['hello', 'world']")
     check_command('${list}', "['hello', 'world']")
@@ -105,13 +103,11 @@ def test_auto_suggest(child):
     check_prompt('g', 'et time')
 
 def test_errors(child):
-    # fail-safe
     check_command('fail', 'AssertionError')
     check_command('nothing', "No keyword with name 'nothing' found.")
     check_command('get', "execution failed:.*No keyword with name 'get' found.")
 
 def test_debug_if(child):
-    # debug if
     check_command('${secs} =  Get Time  epoch', 'secs.* = ')
     check_command('Debug If  ${secs} > 1', 'Enter interactive shell')
     check_command('exit', 'Exit shell.')

@@ -25,10 +25,12 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
+VERSION = find_version('DebugLibrary/version.py')
+install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 
 setup(
     name='robotframework-repl',
-    version=find_version('Repl/version.py'),
+    version=VERSION,
     description='RobotFramework repl',
     long_description=read('README.rst'),
     author='Kerkko Pelttari',
@@ -43,11 +45,7 @@ setup(
     zip_safe=False,
     url='https://github.com/xylix/robotframework-repl/',
     keywords='robotframework,debug,shell,repl',
-    install_requires=[
-        'prompt-toolkit >= 2, < 3',  # 3.0 is not compatible with py3.5
-        'robotframework >= 3.0',
-    ],
-    tests_require=['pexpect', 'coverage', 'pytest'],
+    install_requires=install_requires,
     platforms=['Linux', 'Unix', 'Windows', 'MacOS X'],
     classifiers=[
         'Environment :: Console',
