@@ -109,6 +109,7 @@ def test_variables(child):
 
 
 def test_auto_suggest(child):
+    check_command("get time", "'*'")
     check_prompt("g", "et time")
 
 

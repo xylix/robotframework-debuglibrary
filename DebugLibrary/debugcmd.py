@@ -19,6 +19,7 @@ from .sourcelines import (RobotNeedUpgrade, print_source_lines,
                           print_test_case_lines)
 from .styles import (DEBUG_PROMPT_STYLE, get_debug_prompt_tokens, print_error,
                      print_output)
+from .utils import start_selenium_commands, SELENIUM_WEBDRIVERS
 
 HISTORY_PATH = os.environ.get('RFDEBUG_HISTORY', '~/.rfdebug_history')
 
@@ -53,6 +54,13 @@ def run_robot_command(robot_instance, command):
         print_output(head, message)
 
 
+def do_pdb():
+    """Enter the python debugger pdb. For development only."""
+    print('break into python debugger: pdb')
+    import pdb
+    pdb.set_trace()
+
+
 class BaseCmd(cmd.Cmd):
     """Basic REPL tool."""
     prompt = '> '
@@ -76,10 +84,8 @@ class BaseCmd(cmd.Cmd):
         print('Show help message.')
 
     def do_pdb(self, arg):
-        """Enter the python debuger pdb. For development only."""
-        print('break into python debugger: pdb')
-        import pdb
-        pdb.set_trace()
+        """Enter the python debugger pdb. For development only."""
+        do_pdb()
 
     def get_cmd_names(self):
         """Get all command names of CMD shell."""
@@ -181,7 +187,6 @@ def do_keywords(args) -> None:
 
 
 def complete_libs(line):
-    """Complete libs command."""
     if len(line.split()) == 1 and line.endswith(' '):
         return ['-s']
     return []
@@ -193,6 +198,54 @@ def _print_lib_info(lib, with_source_path=False):
         logger.console('       {}'.format(lib.doc.split('\n')[0]))
     if with_source_path:
         logger.console('       {}'.format(lib.source))
+
+
+def do_docs(keyword_name):
+    keywords = find_keyword(keyword_name)
+    if not keywords:
+        print_error('< not find keyword', keyword_name)
+    elif len(keywords) == 1:
+        logger.console(keywords[0]['doc'])
+    else:
+        print_error('< found {} keywords'.format(len(keywords)),
+                    ', '.join(keywords))
+
+
+def list_source(longlist=False):
+    if not context.in_step_mode:
+        print('Please run `step` or `next` command first.')
+        return
+
+    if longlist:
+        print_function = print_test_case_lines
+    else:
+        print_function = print_source_lines
+
+    try:
+        print_function(context.current_source_path,
+                       context.current_source_lineno)
+    except RobotNeedUpgrade:
+        print('Please upgrade robotframework to support list source code:')
+        print('    pip install "robotframework>=3.2" -U')
+
+
+def do_libs(args):
+    print_output('<', 'Imported libraries:')
+    for lib in get_libs():
+        _print_lib_info(lib, with_source_path='-s' in args)
+    print_output('<', 'Builtin libraries:')
+    for name in sorted(list(STDLIBS)):
+        print_output('   ' + name, '')
+
+
+def complete_selenium(line):
+    if len(line.split()) == 3:
+        command, url, driver_name = line.lower().split()
+        return [driver for driver in SELENIUM_WEBDRIVERS
+                if driver.startswith(driver_name)]
+    elif len(line.split()) == 2 and line.endswith(' '):
+        return SELENIUM_WEBDRIVERS
+    return []
 
 
 class PromptToolkitCmd(BaseCmd):
@@ -225,7 +278,8 @@ Type "help" for more information.\
             line = 'EOF'
         return line
 
-    get_prompt_tokens = lambda self, prompt_text: get_debug_prompt_tokens(prompt_text)
+    def get_prompt_tokens(self, prompt_text):
+        return get_debug_prompt_tokens(prompt_text)
 
     def postcmd(self, stop, line):
         """Run after a command."""
@@ -253,36 +307,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def get_completer(self):
         """Get completer instance specified for robotframework."""
-        # commands
-        commands = [(cmd_name, cmd_name, 'DEBUG command: {0}'.format(doc))
-                    for cmd_name, doc in self.get_helps()]
-
-        # libraries
-        for lib in get_libs():
-            commands.append((
-                lib.name,
-                lib.name,
-                'Library: {0} {1}'.format(lib.name, lib.version),
-            ))
-
-        # keywords
-        for keyword in get_keywords():
-            # name with library
-            name = '{0}.{1}'.format(keyword['lib'], keyword['name'])
-            commands.append((
-                name,
-                keyword['name'],
-                'Keyword: {0}'.format(keyword['summary']),
-            ))
-            # name without library
-            commands.append((
-                keyword['name'],
-                keyword['name'],
-                'Keyword[{0}.]: {1}'.format(keyword['lib'],
-                                            keyword['summary']),
-            ))
-
-        return CmdCompleter(commands, self)
+        return CmdCompleter(self)
 
     def do_selenium(self, arg):
         """Start a selenium webdriver and open url in browser you expect.
@@ -298,13 +323,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def complete_selenium(self, text, line, begin_idx, end_idx):
         """Complete selenium command."""
-        if len(line.split()) == 3:
-            command, url, driver_name = line.lower().split()
-            return [driver for driver in SELENIUM_WEBDRIVERS
-                    if driver.startswith(driver_name)]
-        elif len(line.split()) == 2 and line.endswith(' '):
-            return SELENIUM_WEBDRIVERS
-        return []
+        complete_selenium(line)
 
     def default(self, line):
         """Run RobotFramework keywords."""
@@ -312,21 +331,19 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
         run_robot_command(self.robot, command)
 
+    def complete_libs (self, text, line, begin_idx, end_idx):
+        """Complete  libs """
+        return complete_libs(line)
+
     def do_libs(self, args):
         """Print imported and builtin libraries, with source if `-s` specified.
 
         ls( libs ) [-s]
         """
-        print_output('<', 'Imported libraries:')
-        for lib in get_libs():
-            _print_lib_info(lib, with_source_path='-s' in args)
-        print_output('<', 'Builtin libraries:')
-        for name in sorted(list(STDLIBS)):
-            print_output('   ' + name, '')
-
-    complete_libs = lambda self, text, line, begin_idx, end_idx: complete_libs(line)
+        do_libs(args)
 
     def complete_keywords(self, text, line, begin_idx, end_idx):
+        """Complete keywords command."""
         """ Is the interface necessary for robot support?"""
         return complete_keywords(line)
 
@@ -342,15 +359,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
          d(ocs) [<keyword_name>]
         """
-
-        keywords = find_keyword(keyword_name)
-        if not keywords:
-            print_error('< not find keyword', keyword_name)
-        elif len(keywords) == 1:
-            logger.console(keywords[0]['doc'])
-        else:
-            print_error('< found {} keywords'.format(len(keywords)),
-                        ', '.join(keywords))
+        return do_docs(keyword_name)
 
     def emptyline(self):
         """Repeat last nonempty command if in step mode."""
@@ -380,31 +389,17 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def list_source(self, longlist=False):
         """List source code."""
-        if not context.in_step_mode:
-            print('Please run `step` or `next` command first.')
-            return
-
-        if longlist:
-            print_function = print_test_case_lines
-        else:
-            print_function = print_source_lines
-
-        try:
-            print_function(context.current_source_path,
-                           context.current_source_lineno)
-        except RobotNeedUpgrade:
-            print('Please upgrade robotframework to support list source code:')
-            print('    pip install "robotframework>=3.2" -U')
+        list_source(longlist)
 
     def do_list(self, args):
         """List source code for the current file."""
 
-        self.list_source(longlist=False)
+        list_source(longlist=False)
 
     def do_longlist(self, args):
         """List the whole source code for the current test case."""
 
-        self.list_source(longlist=True)
+        list_source(longlist=True)
 
     def do_exit(self, args):
         """Exit debug shell."""
