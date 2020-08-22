@@ -157,18 +157,17 @@ class BaseCmd(cmd.Cmd):
 
 class PromptToolkitCmd(BaseCmd):
     """CMD shell using prompt-toolkit."""
-
     get_prompt_tokens = None
-    prompt_style = None
+    prompt_style = DEBUG_PROMPT_STYLE
     intro = '''\
 Only accepted plain text format keyword separated with two or more spaces.
 Type "help" for more information.\
 '''
 
-    def __init__(self, completekey='tab', stdin=None, stdout=None,
-                 history_path=''):
+    def __init__(self, completekey='tab', stdin=None, stdout=None,):
         BaseCmd.__init__(self, completekey, stdin, stdout)
-        self.history = FileHistory(os.path.expanduser(history_path))
+        self.robot = BuiltIn()
+        self.history = FileHistory(os.path.expanduser(HISTORY_PATH))
 
     def get_input(self):
         kwargs = dict(
@@ -188,17 +187,6 @@ Type "help" for more information.\
         except EOFError:
             line = 'EOF'
         return line
-
-
-class DebugCmd(PromptToolkitCmd):
-    """Interactive debug shell for robotframework."""
-
-    prompt_style = DEBUG_PROMPT_STYLE
-
-    def __init__(self, completekey='tab', stdin=None, stdout=None):
-        PromptToolkitCmd.__init__(self, completekey, stdin, stdout,
-                                  history_path=HISTORY_PATH)
-        self.robot = BuiltIn()
 
     def get_prompt_tokens(self, prompt_text):
         return get_debug_prompt_tokens(prompt_text)
@@ -222,7 +210,7 @@ use the TAB keyboard key to autocomplete keywords.
 Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 ''')
 
-        PromptToolkitCmd.do_help(self, arg)
+        super().do_help(arg)
 
     def get_completer(self):
         """Get completer instance specified for robotframework."""
@@ -279,8 +267,6 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
             return SELENIUM_WEBDRIVERS
         return []
 
-    complete_s = complete_selenium
-
     def default(self, line):
         """Run RobotFramework keywords."""
         command = line.strip()
@@ -306,15 +292,11 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
         for name in sorted(list(STDLIBS)):
             print_output('   ' + name, '')
 
-    do_ls = do_libs
-
     def complete_libs(self, text, line, begin_idx, end_idx):
         """Complete libs command."""
         if len(line.split()) == 1 and line.endswith(' '):
             return ['-s']
         return []
-
-    complete_l = complete_libs
 
     def do_keywords(self, args):
         """Print keywords of libraries, all or starts with <lib_name>.
@@ -334,8 +316,6 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
                 print_output('   {}\t'.format(keyword['name']),
                              keyword['summary'])
 
-    do_k = do_keywords
-
     def complete_keywords(self, text, line, begin_idx, end_idx):
         """Complete keywords command."""
         if len(line.split()) == 2:
@@ -344,8 +324,6 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
         elif len(line.split()) == 1 and line.endswith(' '):
             return [_.name for _ in get_libs()]
         return []
-
-    complete_k = complete_keywords
 
     def do_docs(self, keyword_name):
         """Get keyword documentation for individual keywords.
@@ -362,12 +340,10 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
             print_error('< found {} keywords'.format(len(keywords)),
                         ', '.join(keywords))
 
-    do_d = do_docs
-
     def emptyline(self):
         """Repeat last nonempty command if in step mode."""
         self.repeat_last_nonempty_command = context.in_step_mode
-        return super(DebugCmd, self).emptyline()
+        return super().emptyline()
 
     def append_command(self, command):
         """Append a command to queue."""
@@ -382,33 +358,13 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
         context.in_step_mode = True
         self.append_exit()  # pass control back to robot runner
 
-    do_s = do_step
-
     def do_next(self, args):
         """Continue execution until the next line is reached or it returns."""
         self.do_step(args)
 
-    do_n = do_next
-
     def do_continue(self, args):
         """Continue execution."""
         self.do_exit(args)
-
-    do_c = do_continue
-
-    def do_list(self, args):
-        """List source code for the current file."""
-
-        self.list_source(longlist=False)
-
-    do_l = do_list
-
-    def do_longlist(self, args):
-        """List the whole source code for the current test case."""
-
-        self.list_source(longlist=True)
-
-    do_ll = do_longlist
 
     def list_source(self, longlist=False):
         """List source code."""
@@ -428,15 +384,42 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
             print('Please upgrade robotframework to support list source code:')
             print('    pip install "robotframework>=3.2" -U')
 
+    def do_list(self, args):
+        """List source code for the current file."""
+
+        self.list_source(longlist=False)
+
+    def do_longlist(self, args):
+        """List the whole source code for the current test case."""
+
+        self.list_source(longlist=True)
+
     def do_exit(self, args):
         """Exit debug shell."""
         context.in_step_mode = False  # explicitly exit REPL will disable step mode
         self.append_exit()
-        return super(DebugCmd, self).do_exit(args)
+        return super().do_exit(args)
 
     def onecmd(self, line):
         # restore last command acrossing different Cmd instances
         self.lastcmd = context.last_command
-        stop = super(DebugCmd, self).onecmd(line)
+        stop = super().onecmd(line)
         context.last_command = self.lastcmd
         return stop
+
+    do_ll = do_longlist
+    do_l = do_list
+    do_c = do_continue
+    do_n = do_next
+    do_s = do_step
+    do_d = do_docs
+    complete_k = complete_keywords
+    do_k = do_keywords
+    complete_l = complete_libs
+    do_ls = do_libs
+    complete_s = complete_selenium
+
+class DebugCmd(PromptToolkitCmd):
+    """Interactive debug shell for robotframework."""
+
+

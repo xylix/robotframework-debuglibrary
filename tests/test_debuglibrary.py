@@ -16,7 +16,7 @@ def check_result(pattern):
     try:
         assert index == 0
     except AssertionError:
-        print(
+        """ print(
             "\n==== Screen buffer raw ====\n",
             child._buffer.getvalue(),
             "\n^^^^ Screen buffer raw ^^^^",
@@ -25,7 +25,7 @@ def check_result(pattern):
             "==== Screen buffer ====\n",
             child._buffer.getvalue().decode("utf8"),
             "\n^^^^ Screen buffer ^^^^",
-        )
+        )"""
         raise
 
 
