@@ -24,17 +24,17 @@ class DebugKeywords(RobotLibraryStepListener):
 
         show_intro = not context.in_step_mode
         if show_intro:
-            print_output('\n>>>>>', 'Enter interactive shell')
+            print_output("\n>>>>>", "Enter interactive shell")
 
         self.debug_cmd = DebugCmd()
         if show_intro:
             self.debug_cmd.cmdloop()
         else:
-            self.debug_cmd.cmdloop(intro='')
+            self.debug_cmd.cmdloop(intro="")
 
         show_intro = not context.in_step_mode
         if show_intro:
-            print_output('\n>>>>>', 'Exit shell.')
+            print_output("\n>>>>>", "Exit shell.")
 
         # put stdout back where it was
         sys.stdout = old_stdout

@@ -7,5 +7,5 @@ from .version import VERSION
 class DebugLibrary(DebugKeywords):
     """Debug Library for RobotFramework."""
 
-    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+    ROBOT_LIBRARY_SCOPE = "GLOBAL"
     ROBOT_LIBRARY_VERSION = VERSION

@@ -1,6 +1,6 @@
 from robot.version import get_version
 
-ROBOT_VERION_RUNNER_GET_STEP_LINENO = '3.2'
+ROBOT_VERION_RUNNER_GET_STEP_LINENO = "3.2"
 
 
 class RobotNeedUpgrade(Exception):
@@ -61,11 +61,11 @@ def _find_first_lineno(lines, begin_lineno):
 
 
 def _inside_test_case_block(line):
-    if line.startswith(' '):
+    if line.startswith(" "):
         return True
-    if line.startswith('\t'):
+    if line.startswith("\t"):
         return True
-    if line.startswith('#'):
+    if line.startswith("#"):
         return True
     return False
 
@@ -73,9 +73,7 @@ def _inside_test_case_block(line):
 def _print_lines(lines, start_index, end_index, current_lineno):
     display_lines = lines[start_index:end_index]
     for lineno, line in enumerate(display_lines, start_index + 1):
-        current_line_sign = ''
+        current_line_sign = ""
         if lineno == current_lineno:
-            current_line_sign = '->'
-        print('{:>3} {:2}\t{}'.format(lineno,
-                                      current_line_sign,
-                                      line.rstrip()))
+            current_line_sign = "->"
+        print("{:>3} {:2}\t{}".format(lineno, current_line_sign, line.rstrip()))

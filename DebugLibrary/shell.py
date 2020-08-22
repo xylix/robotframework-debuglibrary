@@ -4,23 +4,23 @@ import tempfile
 
 from robot import run_cli
 
-TEST_SUITE = b'''*** Settings ***
+TEST_SUITE = b"""*** Settings ***
 Library  DebugLibrary
 
 ** test case **
 RFDEBUG REPL
     debug
-'''
+"""
 
 
 def shell():
     """A standalone robotframework shell."""
 
-    default_no_logs = '-l None -x None -o None -L None -r None'
+    default_no_logs = "-l None -x None -o None -L None -r None"
 
-    with tempfile.NamedTemporaryFile(prefix='robot-debug-',
-                                     suffix='.robot',
-                                     delete=False) as test_file:
+    with tempfile.NamedTemporaryFile(
+        prefix="robot-debug-", suffix=".robot", delete=False
+    ) as test_file:
         test_file.write(TEST_SUITE)
         test_file.flush()
 

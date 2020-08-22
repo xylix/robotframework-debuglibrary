@@ -11,7 +11,7 @@ class RobotLibraryStepListener:
         self.ROBOT_LIBRARY_LISTENER = [self]
 
     def _start_keyword(self, name, attrs):
-        context.current_source_path = ''
+        context.current_source_path = ""
         context.current_source_lineno = 0
 
         if not context.in_step_mode:
@@ -20,24 +20,24 @@ class RobotLibraryStepListener:
         find_runner_step()
         step = context.current_runner_step
 
-        if hasattr(step, 'lineno'):
+        if hasattr(step, "lineno"):
             path = step.source
             lineno = step.lineno
             lineno_0_based = lineno - 1
             context.current_source_path = path
             context.current_source_lineno = lineno
-            print('> {}({})'.format(path, lineno))
-            line = (open(path).readlines()[lineno_0_based].strip())
-            print('-> {}'.format(line))
+            print("> {}({})".format(path, lineno))
+            line = open(path).readlines()[lineno_0_based].strip()
+            print("-> {}".format(line))
 
-        if attrs['assign']:
-            assign = '%s = ' % ', '.join(attrs['assign'])
+        if attrs["assign"]:
+            assign = "%s = " % ", ".join(attrs["assign"])
         else:
-            assign = ''
-            name = '{}.{}'.format(attrs['libname'], attrs['kwname'])
+            assign = ""
+            name = "{}.{}".format(attrs["libname"], attrs["kwname"])
 
-        translated = '{}{}  {}'.format(assign, name, '  '.join(attrs['args']))
-        print('=> {}'.format(translated))
+        translated = "{}{}  {}".format(assign, name, "  ".join(attrs["args"]))
+        print("=> {}".format(translated))
 
         # callback debug interface
         self.debug()
@@ -46,7 +46,7 @@ class RobotLibraryStepListener:
 def find_runner_step():
     stack = inspect.stack()
     for frame in stack:
-        if frame.function == 'run_steps':
+        if frame.function == "run_steps":
             arginfo = inspect.getargvalues(frame.frame)
-            context.current_runner = arginfo.locals.get('runner')
-            context.current_runner_step = arginfo.locals.get('step')
+            context.current_runner = arginfo.locals.get("runner")
+            context.current_runner_step = arginfo.locals.get("step")
