@@ -165,6 +165,28 @@ def complete_keywords(line):
     return []
 
 
+def do_keywords(args):
+    lib_name = args
+    matched = match_libs(lib_name)
+    if not matched:
+        print_error('< not found library', lib_name)
+        return
+    libs = get_libs_dict()
+    for name in matched:
+        lib = libs[name]
+        print_output('< Keywords of library', name)
+        for keyword in get_lib_keywords(lib):
+            print_output('   {}\t'.format(keyword['name']),
+                         keyword['summary'])
+
+
+def complete_libs(line):
+    """Complete libs command."""
+    if len(line.split()) == 1 and line.endswith(' '):
+        return ['-s']
+    return []
+
+
 class PromptToolkitCmd(BaseCmd):
     """CMD shell using prompt-toolkit."""
     prompt_style = DEBUG_PROMPT_STYLE
@@ -298,33 +320,18 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
         for name in sorted(list(STDLIBS)):
             print_output('   ' + name, '')
 
-    def complete_libs(self, text, line, begin_idx, end_idx):
-        """Complete libs command."""
-        if len(line.split()) == 1 and line.endswith(' '):
-            return ['-s']
-        return []
-
-    def do_keywords(self, args):
-        """Print keywords of libraries, all or starts with <lib_name>.
-
-        k(eywords) [<lib_name>]
-        """
-        lib_name = args
-        matched = match_libs(lib_name)
-        if not matched:
-            print_error('< not found library', lib_name)
-            return
-        libs = get_libs_dict()
-        for name in matched:
-            lib = libs[name]
-            print_output('< Keywords of library', name)
-            for keyword in get_lib_keywords(lib):
-                print_output('   {}\t'.format(keyword['name']),
-                             keyword['summary'])
+    complete_libs = lambda self, text, line, begin_idx, end_idx: complete_libs(line)
 
     def complete_keywords(self, text, line, begin_idx, end_idx):
         """ Is the interface necessary for robot support?"""
         return complete_keywords(line)
+
+    def do_keywords(self, args):
+        """Print keywords of libraries, all or starts with <lib_name>.
+    
+         k(eywords) [<lib_name>]
+         """
+        do_keywords(args)
 
     def do_docs(self, keyword_name):
         """Get keyword documentation for individual keywords.
