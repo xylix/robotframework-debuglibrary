@@ -152,12 +152,21 @@ class BaseCmd(cmd.Cmd):
         self.postloop()
 
     def get_input(self):
-        return input(prompt=self.prompt)
+        return input(self.prompt)
+
+
+def complete_keywords(line):
+    """Complete keywords command."""
+    if len(line.split()) == 2:
+        command, lib_name = line.split()
+        return match_libs(lib_name)
+    elif len(line.split()) == 1 and line.endswith(' '):
+        return [_.name for _ in get_libs()]
+    return []
 
 
 class PromptToolkitCmd(BaseCmd):
     """CMD shell using prompt-toolkit."""
-    get_prompt_tokens = None
     prompt_style = DEBUG_PROMPT_STYLE
     intro = '''\
 Only accepted plain text format keyword separated with two or more spaces.
@@ -177,19 +186,16 @@ Type "help" for more information.\
             completer=self.get_completer(),
             complete_style=CompleteStyle.MULTI_COLUMN,
         )
-        if self.get_prompt_tokens:
-            kwargs['style'] = self.prompt_style
-            prompt_str = self.get_prompt_tokens(self.prompt)
-        else:
-            prompt_str = self.prompt
+        kwargs['style'] = self.prompt_style
+        prompt_str = self.get_prompt_tokens(self.prompt)
+
         try:
             line = prompt(message=prompt_str, **kwargs)
         except EOFError:
             line = 'EOF'
         return line
 
-    def get_prompt_tokens(self, prompt_text):
-        return get_debug_prompt_tokens(prompt_text)
+    get_prompt_tokens = lambda self, prompt_text: get_debug_prompt_tokens(prompt_text)
 
     def postcmd(self, stop, line):
         """Run after a command."""
@@ -317,13 +323,8 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
                              keyword['summary'])
 
     def complete_keywords(self, text, line, begin_idx, end_idx):
-        """Complete keywords command."""
-        if len(line.split()) == 2:
-            command, lib_name = line.split()
-            return match_libs(lib_name)
-        elif len(line.split()) == 1 and line.endswith(' '):
-            return [_.name for _ in get_libs()]
-        return []
+        """ Is the interface necessary for robot support?"""
+        return complete_keywords(line)
 
     def do_docs(self, keyword_name):
         """Get keyword documentation for individual keywords.
