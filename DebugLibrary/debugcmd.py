@@ -165,7 +165,7 @@ def complete_keywords(line):
     return []
 
 
-def do_keywords(args):
+def do_keywords(args) -> None:
     lib_name = args
     matched = match_libs(lib_name)
     if not matched:
@@ -185,6 +185,14 @@ def complete_libs(line):
     if len(line.split()) == 1 and line.endswith(' '):
         return ['-s']
     return []
+
+
+def _print_lib_info(lib, with_source_path=False):
+    print_output(f'   {lib.name}', lib.version)
+    if lib.doc:
+        logger.console('       {}'.format(lib.doc.split('\n')[0]))
+    if with_source_path:
+        logger.console('       {}'.format(lib.source))
 
 
 class PromptToolkitCmd(BaseCmd):
@@ -239,6 +247,9 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 ''')
 
         super().do_help(arg)
+
+    def _print_lib_info(self, lib, with_source_path):
+        return _print_lib_info(lib, with_source_path)
 
     def get_completer(self):
         """Get completer instance specified for robotframework."""
@@ -301,13 +312,6 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
         run_robot_command(self.robot, command)
 
-    def _print_lib_info(self, lib, with_source_path=False):
-        print_output('   {}'.format(lib.name), lib.version)
-        if lib.doc:
-            logger.console('       {}'.format(lib.doc.split('\n')[0]))
-        if with_source_path:
-            logger.console('       {}'.format(lib.source))
-
     def do_libs(self, args):
         """Print imported and builtin libraries, with source if `-s` specified.
 
@@ -315,7 +319,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
         """
         print_output('<', 'Imported libraries:')
         for lib in get_libs():
-            self._print_lib_info(lib, with_source_path='-s' in args)
+            _print_lib_info(lib, with_source_path='-s' in args)
         print_output('<', 'Builtin libraries:')
         for name in sorted(list(STDLIBS)):
             print_output('   ' + name, '')
@@ -328,7 +332,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def do_keywords(self, args):
         """Print keywords of libraries, all or starts with <lib_name>.
-    
+
          k(eywords) [<lib_name>]
          """
         do_keywords(args)

@@ -17,7 +17,7 @@ DEBUG_PROMPT_STYLE = Style.from_dict({
 })
 
 
-def print_output(head, message, style=NORMAL_STYLE):
+def print_output(head: str, message: str, style=NORMAL_STYLE) -> None:
     """Print prompt-toolkit tokens to output."""
     tokens = FormattedText([
         ('class:head', '{0} '.format(head)),
