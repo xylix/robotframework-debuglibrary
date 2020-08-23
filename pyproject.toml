@@ -1,2 +1,11 @@
 [tool.black]
 target-version = ['py38']
+
+[tool.flakehell]
+ignore = ['E501']
+max-line-length = 88
+max-complexity = 10
+show_source = true
+
+[tool.flakehell.plugins]
+flake8-bugbear = ["+*"]    

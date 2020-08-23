@@ -26,7 +26,7 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 VERSION = find_version('DebugLibrary/version.py')
-install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
+install_requires = open("requirements.txt").readlines()
 
 setup(
     name='robotframework-repl',
