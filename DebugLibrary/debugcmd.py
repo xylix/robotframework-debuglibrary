@@ -1,6 +1,8 @@
 import cmd
 import os
+from functools import cached_property
 
+from prompt_toolkit import PromptSession
 from robot.api import logger
 from robot.libraries import STDLIBS
 from robot.libraries.BuiltIn import BuiltIn
@@ -63,108 +65,6 @@ def do_pdb():
     import pdb
 
     pdb.set_trace()
-
-
-class BaseCmd(cmd.Cmd):
-    """Basic REPL tool."""
-
-    prompt = "> "
-    repeat_last_nonempty_command = False
-
-    def emptyline(self):
-        """Do not repeat the last command if input empty unless forced to."""
-        if self.repeat_last_nonempty_command:
-            return super(BaseCmd, self).emptyline()
-
-    def do_exit(self, arg):
-        """Exit the interpreter. You can also use the Ctrl-D shortcut."""
-
-        return True
-
-    do_EOF = do_exit
-
-    def help_help(self):
-        """Help of Help command"""
-
-        print("Show help message.")
-
-    def do_pdb(self, arg):
-        """Enter the python debugger pdb. For development only."""
-        do_pdb()
-
-    def get_cmd_names(self):
-        """Get all command names of CMD shell."""
-        pre = "do_"
-        cut = len(pre)
-        return [_[cut:] for _ in self.get_names() if _.startswith(pre)]
-
-    def get_help_string(self, command_name):
-        """Get help document of command."""
-        func = getattr(self, f"do_{command_name}", None)
-        if not func:
-            return ""
-        return func.__doc__
-
-    def get_helps(self):
-        """Get all help documents of commands."""
-        return [
-            (name, self.get_help_string(name) or name) for name in self.get_cmd_names()
-        ]
-
-    def get_completer(self):
-        """Get completer instance."""
-
-    def pre_loop_iter(self):
-        """Excute before every loop iteration."""
-
-    def _get_input(self):
-        if self.cmdqueue:
-            return self.cmdqueue.pop(0)
-        else:
-            try:
-                return self.get_input()
-            except KeyboardInterrupt:
-                return
-
-    def loop_once(self):
-        self.pre_loop_iter()
-        line = self._get_input()
-        if line is None:
-            return
-
-        if line == "exit":
-            line = "EOF"
-
-        line = self.precmd(line)
-        if line == "EOF":
-            # do not run 'EOF' command to avoid override 'lastcmd'
-            stop = True
-        else:
-            stop = self.onecmd(line)
-        stop = self.postcmd(stop, line)
-        return stop
-
-    def cmdloop(self, intro=None):
-        """Better command loop.
-
-        override default cmdloop method
-        """
-        if intro is not None:
-            self.intro = intro
-        if self.intro:
-            self.stdout.write(self.intro)
-            self.stdout.write("\n")
-
-        self.preloop()
-
-        stop = None
-        while not stop:
-            stop = self.loop_once()
-
-        self.postloop()
-
-    def get_input(self):
-        return input(self.prompt)
 
 
 def complete_keywords(line):
@@ -252,7 +152,7 @@ def complete_selenium(line):
     return []
 
 
-class PromptToolkitCmd(BaseCmd):
+class PromptToolkitCmd(cmd.Cmd):
     """CMD shell using prompt-toolkit."""
 
     prompt_style = DEBUG_PROMPT_STYLE
@@ -260,33 +160,66 @@ class PromptToolkitCmd(BaseCmd):
 Only accepted plain text format keyword separated with two or more spaces.
 Type "help" for more information.\
 """
+    prompt = "> "
+    repeat_last_nonempty_command = False
 
-    def __init__(
-        self, completekey="tab", stdin=None, stdout=None,
-    ):
-        BaseCmd.__init__(self, completekey, stdin, stdout)
+    def __init__(self):
+        # Defaults are tab completion with stdin None stdout None
+        super().__init__()
         self.robot = BuiltIn()
         self.history = FileHistory(os.path.expanduser(HISTORY_PATH))
 
-    def get_input(self):
-        kwargs = dict(
+    def help_help(self):
+        """Help of Help command"""
+        print("Show help message.")
+
+    def get_cmd_names(self):
+        """Get all command names of CMD shell."""
+        pre = "do_"
+        cut = len(pre)
+        return [_[cut:] for _ in self.get_names() if _.startswith(pre)]
+
+    def get_help_string(self, command_name):
+        """Get help document of command."""
+        func = getattr(self, f"do_{command_name}", None)
+        if not func:
+            return ""
+        return func.__doc__
+
+    def get_helps(self):
+        """Get all help documents of commands."""
+        return [
+            (name, self.get_help_string(name) or name) for name in self.get_cmd_names()
+        ]
+
+    def _get_input(self):
+        if self.cmdqueue:
+            return self.cmdqueue.pop(0)
+        else:
+            try:
+                return self.get_input()
+            except KeyboardInterrupt:
+                return
+
+    @cached_property
+    def session(self):
+        session = PromptSession(
             history=self.history,
             auto_suggest=AutoSuggestFromHistory(),
             enable_history_search=True,
             completer=self.get_completer(),
             complete_style=CompleteStyle.MULTI_COLUMN,
+            style=self.prompt_style,
+            message=get_debug_prompt_tokens(self.prompt)
         )
-        kwargs["style"] = self.prompt_style
-        prompt_str = self.get_prompt_tokens(self.prompt)
+        return session
 
+    def get_input(self):
         try:
-            line = prompt(message=prompt_str, **kwargs)
+            line = self.session.prompt()
         except EOFError:
             line = "EOF"
         return line
-
-    def get_prompt_tokens(self, prompt_text):
-        return get_debug_prompt_tokens(prompt_text)
 
     def postcmd(self, stop, line):
         """Run after a command."""
@@ -308,7 +241,6 @@ use the TAB keyboard key to autocomplete keywords.
 Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 """
             )
-
         super().do_help(arg)
 
     def _print_lib_info(self, lib, with_source_path):
@@ -349,7 +281,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
         ls( libs ) [-s]
         """
-        do_libs(args)
+        return do_libs(args)
 
     def complete_keywords(self, text, line, begin_idx, end_idx):
         """Complete keywords command."""
@@ -361,7 +293,7 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
          k(eywords) [<lib_name>]
          """
-        do_keywords(args)
+        return do_keywords(args)
 
     def do_docs(self, keyword_name):
         """Get keyword documentation for individual keywords.
@@ -373,7 +305,8 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
     def emptyline(self):
         """Repeat last nonempty command if in step mode."""
         self.repeat_last_nonempty_command = context.in_step_mode
-        return super().emptyline()
+        if self.repeat_last_nonempty_command:
+            return super().emptyline()
 
     def append_command(self, command):
         """Append a command to queue."""
@@ -398,23 +331,23 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
 
     def list_source(self, longlist=False):
         """List source code."""
-        list_source(longlist)
+        return list_source(longlist)
 
     def do_list(self, args):
         """List source code for the current file."""
 
-        list_source(longlist=False)
+        return list_source(longlist=False)
 
     def do_longlist(self, args):
         """List the whole source code for the current test case."""
 
-        list_source(longlist=True)
+        return list_source(longlist=True)
 
     def do_exit(self, args):
-        """Exit debug shell."""
+        """Exit the interpreter. You can also use the Ctrl-D shortcut."""
         context.in_step_mode = False  # explicitly exit REPL will disable step mode
         self.append_exit()
-        return super().do_exit(args)
+        return True
 
     def onecmd(self, line):
         # restore last command acrossing different Cmd instances
@@ -423,6 +356,48 @@ Access https://github.com/xyb/robotframework-debuglibrary for more details.\
         context.last_command = self.lastcmd
         return stop
 
+    def loop_once(self):
+        self.pre_loop_iter()
+        line = self._get_input()
+        if line is None:
+            return
+
+        if line == "exit":
+            line = "EOF"
+
+        line = self.precmd(line)
+        if line == "EOF":
+            # do not run 'EOF' command to avoid override 'lastcmd'
+            stop = True
+        else:
+            stop = self.onecmd(line)
+        stop = self.postcmd(stop, line)
+        return stop
+
+    def cmdloop(self, intro=None):
+        """Better command loop.
+
+        override default cmdloop method
+        """
+        if intro is not None:
+            self.intro = intro
+        if self.intro:
+            self.stdout.write(self.intro)
+            self.stdout.write("\n")
+
+        self.preloop()
+
+        stop = None
+        while not stop:
+            stop = self.loop_once()
+
+        self.postloop()
+
+    def do_pdb(self, arg):
+        """Enter the python debugger pdb. For development only."""
+        do_pdb()
+
+    do_EOF = do_exit
     do_ll = do_longlist
     do_l = do_list
     do_c = do_continue
